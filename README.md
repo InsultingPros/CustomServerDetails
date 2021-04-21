@@ -2,7 +2,7 @@
 
 ![GitHub all releases](https://img.shields.io/github/downloads/InsultingPros/CustomServerDetails/total)
 
-Allows to color, rename, edit other server infos, print game states (aka WIPE, WIN, LOBBY, etc) and players states (DEAD, SPECTATING, etc).
+Allows to color, rename, edit other server infos, print game states (aka WIPE, WIN, LOBBY, etc) and players states (DEAD, SPECTATING, etc). And you can add your own haiku's / custom key-infos.
 
 ## Installation
 
