@@ -33,4 +33,4 @@ For default `serverinfo` keys:
 
 ## Steam workshop
 
-PLACEHOLDER
+<https://steamcommunity.com/linkfilter/?url=https://github.com/InsultingPros/CustomServerDetails/releases>
