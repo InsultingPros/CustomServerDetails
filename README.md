@@ -9,7 +9,7 @@ Allows to color, rename, edit other server infos, print game states (aka WIPE, W
 ```cpp
 `KillingFloor.ini`
 [Engine.GameEngine]
-;ServerActors=IpDrv.MasterServerUplink 
+;ServerActors=IpDrv.MasterServerUplink
 ServerActors=CustomServerDetails.CSDMasterServerUplink
 ```
 
