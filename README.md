@@ -4,6 +4,8 @@
 
 Allows to color, rename, edit other server infos, print game states (aka WIPE, WIN, LOBBY, etc) and players states (DEAD, SPECTATING, etc). And you can add your own haiku's / custom key-infos.
 
+> **N.B.** `Killingfloor.ini` -> [Engine.GameReplicationInfo] -> ServerName: set your NON colored server name here, to avoid weird characters in Steam server browser / gametrackers.
+
 ## Installation
 
 ```cpp
