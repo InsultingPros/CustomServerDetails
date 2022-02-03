@@ -5,8 +5,8 @@ class base_GR extends GameRules;
 var protected string GameTypeName; // cache gametype name for further use
 
 // pre defined gametype consts
-var protected const string KFGameType;        // vanilla KF
-var protected const string KFStoryGame;       // vanilla KFO
+const KFGameType="KFMod.KFGameType";
+const KFStoryGame="KFStoryGame.KFStoryGameInfo";
 
 var protected KFGameType kfgt;
 var protected KFStoryGameInfo kfstory;
@@ -46,13 +46,13 @@ event PreBeginPlay()
 
   // set gametype vars
   // vanilla kf
-  if (GameTypeName == KFGameType)
+  if (ClassIsChildOf(level.game.class, class'KFGameType'))
     kfgt = KFGameType(level.game);
   else
     log(">>> WARNING!!! KFGameType was not found.", class.name);
 
   // vanilla KFO
-  if (GameTypeName == KFStoryGame)
+  if (ClassIsChildOf(level.game.class, class'KFStoryGameInfo'))
   {
     kfstory = KFStoryGameInfo(level.game);
     kfstory_GRI = KF_StoryGRI(kfstory.GameReplicationInfo);
@@ -102,9 +102,4 @@ function string getState();
 
 
 // ==========================================================================
-defaultproperties
-{
-  // vanilla gametypes
-  KFGameType="KFMod.KFGameType"
-  KFStoryGame="KFStoryGame.KFStoryGameInfo"
-}
+defaultproperties{}

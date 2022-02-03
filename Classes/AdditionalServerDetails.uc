@@ -2,20 +2,20 @@ class AdditionalServerDetails extends base_GR;
 
 
 // pre defined gametype consts
-var protected const string PTGameType;        // steamy test map v3
-var protected const string KFPractiseGame1;   // the test map v1
-var protected const string KFPractiseGame2;   // the test map v2
+const PTGameType="PerkTestMutV3.PTGameType";              // steamy test map v3
+const KFPractiseGame1="KF-TheTestmap.KFPractiseGame";     // the test map v1
+const KFPractiseGame2="KF-TheTestmap-2.KFPractiseGame";   // the test map v2
 
 // pre defined state consts
-var protected const string UNDEFINED;
-var protected const string CHANGINGMAP;
-var protected const string WIN;
-var protected const string WIPE;
-var protected const string LOBBY;
-var protected const string WAVE;
-var protected const string TRADER;
-var protected const string CUROBJ;
-var protected const string TESTINGMODE;
+const UNDEFINED="UNDEFINED";
+const CHANGINGMAP="CHANGING_MAP";
+const WIN="WIN";
+const WIPE="WIPE";
+const LOBBY="LOBBY";
+const WAVE="WAVE";
+const TRADER="TRADER";
+const CUROBJ="CUROBJ";
+const TESTINGMODE="TESTINGMODE";
 
 
 // ==========================================================================
@@ -47,7 +47,7 @@ function string getState()
     return TESTINGMODE;
   }
   // KFStoryGameInfo zone!!!
-  else if (GameTypeName == KFStoryGame)
+  else if (kfstory != none)
   {
     kfstory_obj = kfstory_GRI.GetCurrentObjective();
 
@@ -57,7 +57,7 @@ function string getState()
       return UNDEFINED;
   }
   // KFGameType zone!!!
-  else if (GameTypeName == KFGameType)
+  else if (kfgt != none)
   {
     if (kfgt.bWaveInProgress == true)
       return WAVE;
@@ -84,7 +84,7 @@ function getServerDetails(out GameInfo.serverResponseLine serverState)
 {
   // KFGameType!!!
   // have to check this, coz you won't believe there are gametypes that do not extend KFGameType
-  if (GameTypeName == KFGameType)
+  if (kfgt != none)
   {
     addSD(serverState, "Zeds left", max(kfgt.totalMaxMonsters + kfgt.numMonsters, 0));
     addSD(serverState, "Trader time", kfgt.waveCountDown);
@@ -94,7 +94,7 @@ function getServerDetails(out GameInfo.serverResponseLine serverState)
 
   // KFStoryGameInfo!!!
   // for trader time ObjCondition_TraderTime -> Duration (60 by default)
-  if (GameTypeName == KFStoryGame)
+  if (kfstory != none)
   {
     // N.B. if we use local string and assign it we will losse 0.15ms xD
     if (kfstory.CurrentObjective != none)
@@ -106,21 +106,4 @@ function getServerDetails(out GameInfo.serverResponseLine serverState)
 
 
 // ==========================================================================
-defaultproperties
-{
-  // test map gametypes
-  PTGameType="PerkTestMutV3.PTGameType"
-  KFPractiseGame1="KF-TheTestmap.KFPractiseGame"
-  KFPractiseGame2="KF-TheTestmap-2.KFPractiseGame"
-
-  // consts
-  UNDEFINED="UNDEFINED"
-  CHANGINGMAP="CHANGING_MAP"
-  WIN="WIN"
-  WIPE="WIPE"
-  LOBBY="LOBBY"
-  WAVE="WAVE"
-  TRADER="TRADER"
-  CUROBJ="CUROBJ"
-  TESTINGMODE="TESTINGMODE"
-}
+defaultproperties{}
