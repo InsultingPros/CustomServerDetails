@@ -47,9 +47,13 @@ var  config  string                       playerAliveNicknamePattern; //same
 var  config  bool                         bColorNicknames; //change color keys (like ^2 or ^6) to real colors
 
 
-var GameInfo.serverResponseLine srl;
+var private GameInfo.serverResponseLine srl;
 var private AdditionalServerDetails AdditionalSD;
 
+// caching to reduce high resource usage
+var private bool bInit;
+var private string cachedColoredMapName;
+var private array<GameInfo.KeyValuePair> cachedServerInfo;
 
 // for reference
 // GameInfo:
@@ -73,12 +77,12 @@ var private AdditionalServerDetails AdditionalSD;
 //     var() array<PlayerResponseLine> PlayerInfo;
 // };
 
-
 // ==========================================================================
 //                                STARTUP
 // ==========================================================================
 event postBeginPlay()
 {
+  // ConsoleCommand("PROFILESCRIPT START");
   // start the timer with config delay
   setTimer(refreshTime, true);
 
@@ -112,29 +116,48 @@ event Refresh(){}
 // set our Timer
 event timer()
 {
-  // uncomment if you want to measure whole mod impact in performance 
-  // StopWatch(false);
+    // uncomment if you want to measure whole mod impact in performance
+    // local float f;
+    // Clock(f);
 
-  // ask server for all iformation it can give
-  level.game.getServerInfo(srl);
-  getServerPlayers();
-  level.game.getServerDetails(srl);
+    // ask server for all iformation it can give
+    level.game.getServerInfo(srl);
+    getServerPlayers();
+    level.game.getServerDetails(srl);
 
-  // change server name to custom one
-  if (bCustomServerName)
-    dynamicChangeServerName();
+    // change server name to custom one
+    if (bCustomServerName)
+        dynamicChangeServerName();
 
-  // filter/add/change server details
-  if (bChangeServerDetails)
-    filterServerDetails();
+    if (!bInit)
+    {
+        // filter/add/change server details
+        if (bChangeServerDetails)
+        {
+            filterServerDetails();
+        }
 
-  if (bMapColor)
-    srl.mapName = class'o_Utility'.static.ParseTags(mapColor $ srl.mapName);
+        if (bMapColor)
+        {
+            cachedColoredMapName = class'o_Utility'.static.ParseTags(mapColor $ srl.mapName);
+            srl.mapName = cachedColoredMapName;
+        }
 
-  serverState = srl;
+        cachedServerInfo = srl.ServerInfo;
+        serverState = srl;
+        bInit = true;
+    }
+    else
+    {
+        if (bMapColor)
+            srl.mapName = cachedColoredMapName;
 
-  // uncomment if you want to measure whole mod impact in performance 
-  // StopWatch(true);
+        srl.ServerInfo = cachedServerInfo;
+        serverState = srl;
+    }
+    // uncomment if you want to measure whole mod impact in performance
+    // UnClock(f);
+    // log("Timer() job done in - "@f);
 }
 
 
@@ -279,39 +302,47 @@ final private function string fillInfoBlock(string parsedInfoBlock)
 // slowest function in our entire mod, update it once per 60 sec
 final private function filterServerDetails()
 {
-  local int i, j;
+    local int i, j;
+    // local float f;
 
-  // delete all details that are not in allowed list
-  // change detail names if necessary, add color
-  for (i = srl.serverInfo.length - 1; i >= 0; i--)
-  {
-    for (j = 0; j < displayedServerDetails.length; j++)
+    // Clock(f);
+    // delete all details that are not in allowed list
+    // change detail names if necessary, add color
+    for (i = srl.serverInfo.length - 1; i >= 0; i--)
     {
-      if (srl.serverInfo[i].key ~= displayedServerDetails[j].name && !displayedServerDetails[j].bCustom)
-      {
-        if (displayedServerDetails[j].bChangeName)
-          srl.serverInfo[i].key = displayedServerDetails[j].newName;
+        for (j = 0; j < displayedServerDetails.length; j++)
+        {
+            if (srl.serverInfo[i].key ~= displayedServerDetails[j].name && !displayedServerDetails[j].bCustom)
+            {
+                if (displayedServerDetails[j].bChangeName)
+                srl.serverInfo[i].key = displayedServerDetails[j].newName;
 
-        srl.serverInfo[i].key = class'o_Utility'.static.ParseTags(displayedServerDetails[j].keyTag) $ srl.serverInfo[i].key;
-        srl.serverInfo[i].value = class'o_Utility'.static.ParseTags(displayedServerDetails[j].valTag) $ srl.serverInfo[i].value;
-        break;
-      }
+                srl.serverInfo[i].key = class'o_Utility'.static.ParseTags(displayedServerDetails[j].keyTag) $ srl.serverInfo[i].key;
+                srl.serverInfo[i].value = class'o_Utility'.static.ParseTags(displayedServerDetails[j].valTag) $ srl.serverInfo[i].value;
+                break;
+            }
 
-      if (j == (displayedServerDetails.length - 1))
-        srl.serverInfo.remove(i,1);
+            if (j == (displayedServerDetails.length - 1))
+                srl.serverInfo.remove(i,1);
+        }
     }
-  }
+    // UnClock(f);
+    // log("part one:"@f);
+    // f = 0.0;
 
-  // add custom details
-  for (i = 0; i < displayedServerDetails.length; i++)
-  {
-    if (displayedServerDetails[i].bCustom)
+    // Clock(f);
+    // add custom details
+    for (i = 0; i < displayedServerDetails.length; i++)
     {
-      srl.serverInfo.length = srl.serverInfo.length + 1;
-      srl.serverInfo[srl.serverInfo.length - 1].key = class'o_Utility'.static.ParseTags(displayedServerDetails[i].keyTag) $ displayedServerDetails[i].name;
-      srl.serverInfo[srl.serverInfo.length - 1].value = class'o_Utility'.static.ParseTags(displayedServerDetails[i].valTag) $ displayedServerDetails[i].customValue;
+        if (displayedServerDetails[i].bCustom)
+        {
+            AdditionalSD.addSD(srl, class'o_Utility'.static.ParseTags(displayedServerDetails[i].keyTag) $ displayedServerDetails[i].name,
+                            class'o_Utility'.static.ParseTags(displayedServerDetails[i].valTag) $ displayedServerDetails[i].customValue);
+        }
     }
-  }
+
+    // UnClock(f);
+    // log("part two:"@f);
 }
 
 

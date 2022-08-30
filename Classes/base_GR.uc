@@ -90,7 +90,7 @@ event Destroyed()
 // ==========================================================================
 
 // class'GameInfo'.static.AddServerDetails(); copy-cat
-final protected static function addSD(out GameInfo.serverResponseLine serverState, string newkey, coerce string newvalue)
+final static function addSD(out GameInfo.serverResponseLine serverState, string newkey, coerce string newvalue)
 {
   class'GameInfo'.static.AddServerDetail(serverState, newkey, newvalue);
 }
