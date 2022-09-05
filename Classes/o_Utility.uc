@@ -11,19 +11,43 @@ struct ColorRecord
 };
 var config array<ColorRecord> ColorList;    // color list
 
+// caching
+var private transient bool bInit;
+var private transient array<string> cachedTags;
+var private transient array<string> cachedColoredStrings;
 
 // ==========================================================================
 // main function that colors strings from user defined tags / color structs
 // converts color tags to colors
+
+final static function Init()
+{
+    local int i;
+
+    if (!default.bInit)
+    {
+        for (i = 0; i < default.ColorList.Length; i++)
+        {
+            default.cachedTags[i] = default.ColorList[i].Tag;
+            default.cachedColoredStrings[i] = class'GameInfo'.static.MakeColorCode(default.ColorList[i].Color);
+        }
+        default.bInit = true;
+        log(">>>>>>>>>> All tags and colored strings cached!");
+    }
+}
+
 final static function string ParseTags(string input)
 {
-  local int i;
+    local int i;
 
-  for (i = 0; i < default.ColorList.Length; i++)
-  {
-    ReplaceText(input, default.ColorList[i].Tag, class'GameInfo'.static.MakeColorCode(default.ColorList[i].Color));
-  }
-  return input;
+    if (!default.bInit)
+        Init();
+
+    for (i = 0; i < default.ColorList.Length; i++)
+    {
+        ReplaceText(input, default.cachedTags[i], default.cachedColoredStrings[i]);
+    }
+    return input;
 }
 
 
