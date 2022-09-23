@@ -19,17 +19,17 @@ var protected KF_StoryGRI kfstory_GRI;
 
 event PostBeginPlay()
 {
-	if (Level.Game.GameRulesModifiers == none)
-		Level.Game.GameRulesModifiers = self;
-	else
-		Level.Game.GameRulesModifiers.AddGameRules(self);
+    if (Level.Game.GameRulesModifiers == none)
+        Level.Game.GameRulesModifiers = self;
+    else
+        Level.Game.GameRulesModifiers.AddGameRules(self);
 }
 
 
 function AddGameRules(GameRules GR)
 {
-	if (GR != self)
-		super.AddGameRules(GR);
+    if (GR != self)
+        super.AddGameRules(GR);
 }
 
 
