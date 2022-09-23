@@ -82,10 +82,6 @@ var private array<GameInfo.KeyValuePair> cachedServerInfo;
 // ==========================================================================
 event postBeginPlay()
 {
-    // ConsoleCommand("PROFILESCRIPT START");
-    // start the timer with config delay
-    setTimer(refreshTime, true);
-
     // add to the game special custom GameRules
     // so these GameRules will add extra details on the server description
     if (AdditionalSD == none)
@@ -102,6 +98,31 @@ event postBeginPlay()
         if (inStr(playerAliveNicknamePattern, "%nickname%") == -1)
             log("CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in 'playerAliveNicknamePattern'. JUST DO IT!");
     }
+
+    // ConsoleCommand("PROFILESCRIPT START");
+    // start the timer with config delay
+    setTimer(refreshTime, true);
+}
+
+
+final private function CacheStuff()
+{
+    // filter/add/change server details
+    if (bChangeServerDetails)
+    {
+        filterServerDetails();
+    }
+
+    if (bMapColor)
+    {
+        cachedColoredMapName = class'o_Utility'.static.ParseTags(mapColor $ srl.mapName);
+        srl.mapName = cachedColoredMapName;
+    }
+
+    cachedServerInfo = srl.ServerInfo;
+    serverState = srl;
+
+    bInit = true;
 }
 
 
@@ -125,36 +146,21 @@ event timer()
     getServerPlayers();
     level.game.getServerDetails(srl);
 
-    // change server name to custom one
-    if (bCustomServerName)
-        dynamicChangeServerName();
-
     if (!bInit)
-    {
-        // filter/add/change server details
-        if (bChangeServerDetails)
-        {
-            filterServerDetails();
-        }
-
-        if (bMapColor)
-        {
-            cachedColoredMapName = class'o_Utility'.static.ParseTags(mapColor $ srl.mapName);
-            srl.mapName = cachedColoredMapName;
-        }
-
-        cachedServerInfo = srl.ServerInfo;
-        serverState = srl;
-        bInit = true;
-    }
+        CacheStuff();
     else
     {
+        // change server name to custom one
+        if (bCustomServerName)
+            dynamicChangeServerName();
+
         if (bMapColor)
             srl.mapName = cachedColoredMapName;
 
         srl.ServerInfo = cachedServerInfo;
         serverState = srl;
     }
+
     // uncomment if you want to measure whole mod impact in performance
     // UnClock(f);
     // log("Timer() job done in - "@f);

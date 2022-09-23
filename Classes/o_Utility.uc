@@ -32,7 +32,7 @@ final static function Init()
             default.cachedColoredStrings[i] = class'GameInfo'.static.MakeColorCode(default.ColorList[i].Color);
         }
         default.bInit = true;
-        log(">>>>>>>>>> All tags and colored strings cached!");
+        // log(">>>>>>>>>> All tags and colored strings cached!");
     }
 }
 
