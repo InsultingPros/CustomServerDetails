@@ -8,52 +8,60 @@ class CSDMasterServerUplink extends MasterServerUplink
 // To understand what's going on here, just look at sample .ini file. It's very simple.
 struct displayedDetails
 {
-    var  string  name;        // name of the key
-    var  string  keyTag;      // color tag of key (name)
-    var  string  valTag;      // color tag of value
-    var  bool    bChangeName; // change name of the key
-    var  string  newName;     // new name
-    var  bool    bCustom;     // if true, set name and customValue (and ofc their colors)
-    var  string  customValue;
+    var string name;        // name of the key
+    var string keyTag;      // color tag of key (name)
+    var string valTag;      // color tag of value
+    var bool   bChangeName; // change name of the key
+    var string newName;     // new name
+    var bool   bCustom;     // if true, set name and customValue (and ofc their colors)
+    var string customValue;
 };
 
 struct infoBlockPattern
 {
-    var  string  state;
-    var  string  pattern;
+    var string state;
+    var string pattern;
+};
+
+struct cacheinfoBlockPattern
+{
+    var string state;
+    var string pattern;
+    var bool   bPasteValue;
 };
 
 struct infoBlockKey
 {
-    var  string  detail;
-    var  string  key;
+    var string detail;
+    var string key;
 };
 
-var  config  bool                         bChangeServerDetails;     // if true, you can filter/change/add server details
-var  config  array<displayedDetails>      displayedServerDetails;   // server details you want to show
-var  config  int                          refreshTime;              // [seconds] how frequently refresh and send informaton to master server
-var  config  bool                         bCustomServerName;        // allows you to use custom server name
-var  config  string                       serverName;               // obviously
-var  config  bool                         bMapColor;                // obviously
-var  config  string                       mapColor;                 // obviously
-var  config  bool                         bInfoBlockInServerName;   //if true, adds block with information in the server's name, there must be %infoBlock% in the "serverName"
-var  config  array<infoBlockPattern>      infoBlockPatterns;        //there is unique name of the server for every state of the game
-var  config  array<infoBlockKey>          infoBlockKeys; //custom %keys%, which are used in the "infoBlock", so some server details can be showed in the server's name
-var  config  bool                         bAnotherNicknamesStyle; //if true, you can define the style of nicknames, depends on state of the player (dead, spectating etc.)
-var  config  string                       playerDeadNicknamePattern; //style of player's nickname when he is dead. must consists %nickname%
-var  config  string                       playerSpectatingNicknamePattern;//same, but for spectating state
-var  config  string                       playerAwaitingNicknamePattern; //same
-var  config  string                       playerAliveNicknamePattern; //same
-var  config  bool                         bColorNicknames; //change color keys (like ^2 or ^6) to real colors
+var config bool                         bChangeServerDetails;     // if true, you can filter/change/add server details
+var config array<displayedDetails>      displayedServerDetails;   // server details you want to show
+var config int                          refreshTime;              // [seconds] how frequently refresh and send informaton to master server
+var config bool                         bCustomServerName;        // allows you to use custom server name
+var config string                       serverName;               // obviously
+var config bool                         bMapColor;                // obviously
+var config string                       mapColor;                 // obviously
+var config bool                         bInfoBlockInServerName;   //if true, adds block with information in the server's name, there must be %infoBlock% in the "serverName"
+var config array<infoBlockPattern>      infoBlockPatterns;        //there is unique name of the server for every state of the game
+var config array<infoBlockKey>          infoBlockKeys; //custom %keys%, which are used in the "infoBlock", so some server details can be showed in the server's name
+var config bool                         bAnotherNicknamesStyle; //if true, you can define the style of nicknames, depends on state of the player (dead, spectating etc.)
+var config string                       playerDeadNicknamePattern; //style of player's nickname when he is dead. must consists %nickname%
+var config string                       playerSpectatingNicknamePattern;//same, but for spectating state
+var config string                       playerAwaitingNicknamePattern; //same
+var config string                       playerAliveNicknamePattern; //same
+var config bool                         bColorNicknames; //change color keys (like ^2 or ^6) to real colors
 
 
 var private GameInfo.serverResponseLine srl;
 var private AdditionalServerDetails AdditionalSD;
 
 // caching to reduce high resource usage
-var private bool bInit;
-var private string cachedColoredMapName;
-var private array<GameInfo.KeyValuePair> cachedServerInfo;
+var private transient bool bInit;
+var private transient string cachedColoredMapName;
+var private transient array<GameInfo.KeyValuePair> cachedServerInfo;
+var private transient array<cacheinfoBlockPattern> cachedInfoBlockPatterns;
 
 // for reference
 // GameInfo:
@@ -107,6 +115,31 @@ event postBeginPlay()
 
 final private function CacheStuff()
 {
+    local int i, n;
+    local cacheinfoBlockPattern ibp;
+
+    ServerName = class'o_Utility'.static.ParseTags(ServerName);
+    // pre color everything
+    for (i = 0; i < infoBlockPatterns.length; i++)
+    {
+        ibp.state = infoBlockPatterns[i].state;
+        ibp.pattern = class'o_Utility'.static.ParseTags(infoBlockPatterns[i].pattern);
+        cachedInfoBlockPatterns[cachedInfoBlockPatterns.Length] = ibp;
+    }
+
+    // create separate, smaller array of value containing patterns
+    for (i = 0; i < cachedInfoBlockPatterns.length; i++)
+    {
+        for (n = 0; n < infoBlockKeys.length; n++)
+        {
+            if (inStr(cachedInfoBlockPatterns[i].pattern, "%"$infoBlockKeys[n].key$"%") != -1)
+            {
+                cachedInfoBlockPatterns[i].bPasteValue = true;
+            }
+        }
+    }
+
+
     // filter/add/change server details
     if (bChangeServerDetails)
     {
@@ -166,8 +199,6 @@ event timer()
     // log("Timer() job done in - "@f);
 }
 
-
-// class'GameInfo'.static.AddServerDetail(out ServerResponseLine ServerState, string RuleName, coerce string RuleValue)
 
 // it's changed function of TWI 'GameInfo'.GetServerPlayers() with some extended capabilities
 // just adds list of players
@@ -255,11 +286,11 @@ final private function dynamicChangeServerName()
 
         // get appropriate infoBlock pattern for current game state
         // and then replace %shitLikeThis% with real values
-        for (i = 0; i < infoBlockPatterns.length; i++)
+        for (i = 0; i < cachedInfoBlockPatterns.length; i++)
         {
-            if (currentState == infoBlockPatterns[i].state)
+            if (currentState == cachedInfoBlockPatterns[i].state)
             {
-                infoBlock = fillInfoBlock(infoBlockPatterns[i].pattern);
+                infoBlock = fillInfoBlock(cachedInfoBlockPatterns[i].pattern, cachedInfoBlockPatterns[i].bPasteValue);
                 break;
             }
         }
@@ -274,29 +305,29 @@ final private function dynamicChangeServerName()
     // infoBlock isn't used in the server name
     else
         srl.serverName = serverName;
-
-    // color everything at this step
-    srl.serverName = class'o_Utility'.static.ParseTags(srl.serverName);
 }
 
 
 // function which replaces %keysLikeThis% in the "infoBlock" with real values
-final private function string fillInfoBlock(string parsedInfoBlock)
+final private function string fillInfoBlock(string parsedInfoBlock, optional bool bPasteValue)
 {
     local int i;
     local int j;
 
-    // searching for server admin's custom keys in the "infoBlock pattern"
-    for (i = 0; i < infoBlockKeys.length; i++)
+    if (bPasteValue)
     {
-        // in case it's in the "infoBlock pattern", start search in server details
-        // to past its value in place of %someDefinedKey%
-        if (inStr(parsedInfoBlock, "%"$infoBlockKeys[i].key$"%") != -1)
+        // searching for server admin's custom keys in the "infoBlock pattern"
+        for (i = 0; i < infoBlockKeys.length; i++)
         {
-            for (j = 0; j < srl.serverInfo.length; j++)
+            // in case it's in the "infoBlock pattern", start search in server details
+            // to past its value in place of %someDefinedKey%
+            if (inStr(parsedInfoBlock, "%"$infoBlockKeys[i].key$"%") != -1)
             {
-                if (srl.serverInfo[j].key == infoBlockKeys[i].detail)
-                    parsedInfoBlock = repl(parsedInfoBlock, "%"$infoBlockKeys[i].key$"%", srl.serverInfo[j].value);
+                for (j = 0; j < srl.serverInfo.length; j++)
+                {
+                    if (srl.serverInfo[j].key == infoBlockKeys[i].detail)
+                        parsedInfoBlock = repl(parsedInfoBlock, "%"$infoBlockKeys[i].key$"%", srl.serverInfo[j].value);
+                }
             }
         }
     }
@@ -355,5 +386,5 @@ final private function filterServerDetails()
 // ==========================================================================
 defaultproperties
 {
-    refreshTime=3
+    refreshTime=4
 }
