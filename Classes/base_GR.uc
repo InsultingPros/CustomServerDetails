@@ -39,35 +39,35 @@ function AddGameRules(GameRules GR)
 
 event PreBeginPlay()
 {
-  super.PreBeginPlay();
+    super.PreBeginPlay();
 
-  // set this at spawn time
-  GameTypeName = getGTstr();
+    // set this at spawn time
+    GameTypeName = getGTstr();
 
-  // set gametype vars
-  // vanilla kf
-  if (ClassIsChildOf(level.game.class, class'KFGameType'))
-    kfgt = KFGameType(level.game);
-  else
-    log(">>> WARNING!!! KFGameType was not found.", class.name);
+    // set gametype vars
+    // vanilla kf
+    if (ClassIsChildOf(level.game.class, class'KFGameType'))
+        kfgt = KFGameType(level.game);
+    else
+        log(">>> WARNING!!! KFGameType was not found.", class.name);
 
-  // vanilla KFO
-  if (ClassIsChildOf(level.game.class, class'KFStoryGameInfo'))
-  {
-    kfstory = KFStoryGameInfo(level.game);
-    kfstory_GRI = KF_StoryGRI(kfstory.GameReplicationInfo);
-  }
+    // vanilla KFO
+    if (ClassIsChildOf(level.game.class, class'KFStoryGameInfo'))
+    {
+        kfstory = KFStoryGameInfo(level.game);
+        kfstory_GRI = KF_StoryGRI(kfstory.GameReplicationInfo);
+    }
 }
 
 
 final function string getGTstr()
 {
-  local GameReplicationInfo tempGri;
+    local GameReplicationInfo tempGri;
 
-  foreach allActors(class'GameReplicationInfo', tempGri)
-  {
-    return tempGri.gameClass;
-  }
+    foreach allActors(class'GameReplicationInfo', tempGri)
+    {
+        return tempGri.gameClass;
+    }
 }
 
 
@@ -78,11 +78,11 @@ final function string getGTstr()
 // keep everything clean and safe
 event Destroyed()
 {
-  super.Destroyed();
+    super.Destroyed();
 
-  kfgt = none;
-  kfstory = none;
-  kfstory_GRI = none;
+    kfgt = none;
+    kfstory = none;
+    kfstory_GRI = none;
 }
 
 // ==========================================================================
@@ -92,7 +92,7 @@ event Destroyed()
 // class'GameInfo'.static.AddServerDetails(); copy-cat
 final static function addSD(out GameInfo.serverResponseLine serverState, string newkey, coerce string newvalue)
 {
-  class'GameInfo'.static.AddServerDetail(serverState, newkey, newvalue);
+    class'GameInfo'.static.AddServerDetail(serverState, newkey, newvalue);
 }
 
 
