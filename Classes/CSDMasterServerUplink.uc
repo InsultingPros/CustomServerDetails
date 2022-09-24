@@ -39,7 +39,7 @@ struct infoBlockKey
 var config bool                         bChangeServerDetails;     // if true, you can filter/change/add server details
 var config array<displayedDetails>      displayedServerDetails;   // server details you want to show
 var config int                          refreshTime;              // [seconds] how frequently refresh and send informaton to master server
-var config bool                         bCustomServerName;        // allows you to use custom server name
+var config bool                         bCustomServerName;        // allows you to use custom server name from config file
 var config string                       serverName;               // obviously
 var config bool                         bMapColor;                // obviously
 var config string                       mapColor;                 // obviously
@@ -57,11 +57,16 @@ var config bool                         bColorNicknames; //change color keys (li
 var private GameInfo.serverResponseLine srl;
 var private AdditionalServerDetails AdditionalSD;
 
-// caching to reduce high resource usage
+// variables for caching
 var private transient bool bInit;
+var private transient string cachedServerName;
 var private transient string cachedColoredMapName;
 var private transient array<GameInfo.KeyValuePair> cachedServerInfo;
 var private transient array<cacheinfoBlockPattern> cachedInfoBlockPatterns;
+var private transient string cachedPlayerDeadNicknamePattern;
+var private transient string cachedPlayerSpectatingNicknamePattern;
+var private transient string cachedPlayerAwaitingNicknamePattern;
+var private transient string cachedPlayerAliveNicknamePattern;
 
 // for reference
 // GameInfo:
@@ -118,8 +123,17 @@ final private function CacheStuff()
     local int i, n;
     local cacheinfoBlockPattern ibp;
 
-    ServerName = class'o_Utility'.static.ParseTags(ServerName);
     // pre color everything
+    if (bCustomServerName)
+        cachedServerName = class'o_Utility'.static.ParseTags(ServerName);
+    else
+        cachedServerName = Level.GRI.ServerName;
+
+    cachedPlayerDeadNicknamePattern = class'o_Utility'.static.ParseTags(playerDeadNicknamePattern);
+    cachedPlayerSpectatingNicknamePattern = class'o_Utility'.static.ParseTags(playerSpectatingNicknamePattern);
+    cachedPlayerAwaitingNicknamePattern = class'o_Utility'.static.ParseTags(playerAwaitingNicknamePattern);
+    cachedPlayerAliveNicknamePattern = class'o_Utility'.static.ParseTags(playerAliveNicknamePattern);
+
     for (i = 0; i < infoBlockPatterns.length; i++)
     {
         ibp.state = infoBlockPatterns[i].state;
@@ -138,7 +152,6 @@ final private function CacheStuff()
             }
         }
     }
-
 
     // filter/add/change server details
     if (bChangeServerDetails)
@@ -184,7 +197,7 @@ event timer()
     else
     {
         // change server name to custom one
-        if (bCustomServerName)
+        if (bCustomServerName || bInfoBlockInServerName)
             dynamicChangeServerName();
 
         if (bMapColor)
@@ -258,13 +271,13 @@ final private function string getCtrlState(Controller c)
 {
     // c.GetStateName()
     if (c.isInState('Spectating'))
-        return playerSpectatingNicknamePattern;
+        return cachedPlayerSpectatingNicknamePattern;
     else if (c.isInState('Dead') || (c.isInState('GameEnded') && c.playerReplicationInfo.bOutOfLives) || c.isInState('WaitingForPawn'))
-        return playerDeadNicknamePattern;
+        return cachedPlayerDeadNicknamePattern;
     else if (c.isInState('PlayerWaiting'))
-        return playerAwaitingNicknamePattern;
+        return cachedPlayerAwaitingNicknamePattern;
     else
-        return playerAliveNicknamePattern;
+        return cachedPlayerAliveNicknamePattern;
 }
 
 
@@ -296,15 +309,15 @@ final private function dynamicChangeServerName()
         }
 
         // paste infoBlock in server name
-        if (inStr(serverName, "%infoBlock%") != -1)
-            srl.serverName = repl(serverName, "%infoBlock%", infoBlock);
+        if (inStr(cachedServerName, "%infoBlock%") != -1)
+            srl.serverName = repl(cachedServerName, "%infoBlock%", infoBlock);
         // can't find %infoBlock% in the server's name, so past infoBlock at the end
         else
-            srl.serverName = serverName @ infoBlock;
+            srl.serverName = cachedServerName @ infoBlock;
     }
     // infoBlock isn't used in the server name
     else
-        srl.serverName = serverName;
+        srl.serverName = cachedServerName;
 }
 
 
