@@ -58,6 +58,8 @@ var private GameInfo.serverResponseLine srl;
 var private AdditionalServerDetails AdditionalSD;
 
 // variables for caching
+// N.B. transient modificator does nothing here, I just
+// use it to visually differentiate 'special' variables
 var private transient bool bInit;
 var private transient string cachedServerName;
 var private transient string cachedColoredMapName;
@@ -67,6 +69,9 @@ var private transient string cachedPlayerDeadNicknamePattern;
 var private transient string cachedPlayerSpectatingNicknamePattern;
 var private transient string cachedPlayerAwaitingNicknamePattern;
 var private transient string cachedPlayerAliveNicknamePattern;
+
+// various
+var private string nickNameWarning;
 
 // for reference
 // GameInfo:
@@ -103,13 +108,13 @@ event postBeginPlay()
     if (bAnotherNicknamesStyle)
     {
         if (inStr(playerDeadNicknamePattern, "%nickname%") == -1)
-            log("CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in 'playerDeadNicknamePattern'. JUST DO IT!");
+            log(Repl(nickNameWarning, "%var%", "playerDeadNicknamePattern"));
         if (inStr(playerSpectatingNicknamePattern, "%nickname%") == -1)
-            log("CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in 'playerSpectatingNicknamePattern'. JUST DO IT!");
+            log(Repl(nickNameWarning, "%var%", "playerSpectatingNicknamePattern"));
         if (inStr(playerAwaitingNicknamePattern, "%nickname%") == -1)
-            log("CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in 'playerAwaitingNicknamePattern'. JUST DO IT!");
+            log(Repl(nickNameWarning, "%var%", "playerAwaitingNicknamePattern"));
         if (inStr(playerAliveNicknamePattern, "%nickname%") == -1)
-            log("CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in 'playerAliveNicknamePattern'. JUST DO IT!");
+            log(Repl(nickNameWarning, "%var%", "playerAliveNicknamePattern"));
     }
 
     // ConsoleCommand("PROFILESCRIPT START");
@@ -122,6 +127,10 @@ final private function CacheStuff()
 {
     local int i, n;
     local cacheinfoBlockPattern ibp;
+
+     // ask server for all iformation it can give
+    level.game.getServerInfo(srl);
+    level.game.getServerDetails(srl);
 
     // pre color everything
     if (bCustomServerName)
@@ -187,15 +196,20 @@ event timer()
     // local float f;
     // Clock(f);
 
-    // ask server for all iformation it can give
-    level.game.getServerInfo(srl);
-    getServerPlayers();
-    level.game.getServerDetails(srl);
-
     if (!bInit)
         CacheStuff();
     else
     {
+        // at first get all the details
+        // GameInfo:    ServerName | MapName | GameType | CurrentPlayers | MaxPlayers |
+        //              CurrentWave | FinalWave | Port | SkillLevel
+        // KFGameType:  Flags
+        level.game.getServerInfo(srl);
+        // ask server for all iformation it can give
+        CSDGetServerPlayers();
+        // TODO cache this too: mutators add their own stuff here
+        level.game.getServerDetails(srl);
+
         // change server name to custom one
         if (bCustomServerName || bInfoBlockInServerName)
             dynamicChangeServerName();
@@ -215,7 +229,7 @@ event timer()
 
 // it's changed function of TWI 'GameInfo'.GetServerPlayers() with some extended capabilities
 // just adds list of players
-final private function GetServerPlayers()
+final private function CSDGetServerPlayers()
 {
     local Mutator m;
     local Controller c;
@@ -243,7 +257,7 @@ final private function GetServerPlayers()
             if (bAnotherNicknamesStyle)
             {
                 srl.playerInfo[i].statsID = 0;
-                srl.playerInfo[i].playerName = repl(getCtrlState(c), "%nickname%", pri.playerName);
+                srl.playerInfo[i].playerName = repl(getCtrlState(c, pri), "%nickname%", pri.playerName);
             }
             else if (level.game.bTeamGame && pri.team != none)
             {
@@ -266,16 +280,22 @@ final private function GetServerPlayers()
         m.getServerPlayers(srl);
 }
 
-
-final private function string getCtrlState(Controller c)
+final private function string getCtrlState(Controller c, playerReplicationInfo pri)
 {
     // c.GetStateName()
-    if (c.isInState('Spectating'))
+    // most reliable way to check spectators
+    if (pri.bOnlySpectator)
         return cachedPlayerSpectatingNicknamePattern;
-    else if (c.isInState('Dead') || (c.isInState('GameEnded') && c.playerReplicationInfo.bOutOfLives) || c.isInState('WaitingForPawn'))
+    // if (c.isInState('Spectating'))
+
+    //     return cachedPlayerSpectatingNicknamePattern;
+    else if (c.isInState('Dead') || (c.isInState('GameEnded') && c.playerReplicationInfo.bOutOfLives)
+            || c.isInState('WaitingForPawn'))
         return cachedPlayerDeadNicknamePattern;
+
     else if (c.isInState('PlayerWaiting'))
         return cachedPlayerAwaitingNicknamePattern;
+
     else
         return cachedPlayerAliveNicknamePattern;
 }
@@ -367,8 +387,10 @@ final private function filterServerDetails()
                 if (displayedServerDetails[j].bChangeName)
                 srl.serverInfo[i].key = displayedServerDetails[j].newName;
 
-                srl.serverInfo[i].key = class'o_Utility'.static.ParseTags(displayedServerDetails[j].keyTag) $ srl.serverInfo[i].key;
-                srl.serverInfo[i].value = class'o_Utility'.static.ParseTags(displayedServerDetails[j].valTag) $ srl.serverInfo[i].value;
+                srl.serverInfo[i].key = class'o_Utility'.static.ParseTags(displayedServerDetails[j].keyTag)
+                                        $ srl.serverInfo[i].key;
+                srl.serverInfo[i].value = class'o_Utility'.static.ParseTags(displayedServerDetails[j].valTag)
+                                            $ srl.serverInfo[i].value;
                 break;
             }
 
@@ -386,8 +408,10 @@ final private function filterServerDetails()
     {
         if (displayedServerDetails[i].bCustom)
         {
-            AdditionalSD.addSD(srl, class'o_Utility'.static.ParseTags(displayedServerDetails[i].keyTag) $ displayedServerDetails[i].name,
-                            class'o_Utility'.static.ParseTags(displayedServerDetails[i].valTag) $ displayedServerDetails[i].customValue);
+            AdditionalSD.addSD(srl, class'o_Utility'.static.ParseTags(displayedServerDetails[i].keyTag)
+                                $ displayedServerDetails[i].name,
+                                class'o_Utility'.static.ParseTags(displayedServerDetails[i].valTag)
+                                $ displayedServerDetails[i].customValue);
         }
     }
 
@@ -400,4 +424,5 @@ final private function filterServerDetails()
 defaultproperties
 {
     refreshTime=4
+    nickNameWarning="CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in '%var%'. JUST DO IT!"
 }
