@@ -1,3 +1,7 @@
+// Contains some utilitary functions
+// Author        : NikC-
+// Home Repo     : https://github.com/InsultingPros/CustomServerDetails
+// License       : https://www.gnu.org/licenses/gpl-3.0.en.html
 class o_Utility extends object
     config(CustomServerDetails);
 
@@ -19,46 +23,45 @@ var private transient array<string> cachedColoredStrings;
 // ==========================================================================
 // main function that colors strings from user defined tags / color structs
 // converts color tags to colors
-
-final static function Init()
+final private function Init()
 {
     local int i;
 
-    if (!default.bInit)
+    if (!bInit)
     {
-        for (i = 0; i < default.ColorList.Length; i++)
+        for (i = 0; i < ColorList.Length; i++)
         {
-            default.cachedTags[i] = default.ColorList[i].Tag;
-            default.cachedColoredStrings[i] = class'GameInfo'.static.MakeColorCode(default.ColorList[i].Color);
+            cachedTags[i] = ColorList[i].Tag;
+            cachedColoredStrings[i] = class'GameInfo'.static.MakeColorCode(ColorList[i].Color);
         }
-        default.bInit = true;
+        bInit = true;
         // log(">>>>>>>>>> All tags and colored strings cached!");
     }
 }
 
-final static function string ParseTags(string input)
+final function string ParseTags(string input)
 {
     local int i;
 
-    if (!default.bInit)
+    if (!bInit)
         Init();
 
-    for (i = 0; i < default.ColorList.Length; i++)
+    for (i = 0; i < ColorList.Length; i++)
     {
-        ReplaceText(input, default.cachedTags[i], default.cachedColoredStrings[i]);
+        ReplaceText(input, cachedTags[i], cachedColoredStrings[i]);
     }
     return input;
 }
 
 
 // remove all user defined tags, aka ^1^, #4#, etc.
-final static function string StripTags(string input)
+final function string StripTags(string input)
 {
     local int i;
 
-    for (i = 0; i < default.ColorList.length; i++)
+    for (i = 0; i < ColorList.length; i++)
     {
-        ReplaceText(input, default.ColorList[i].tag, "");
+        ReplaceText(input, ColorList[i].tag, "");
     }
     return input;
 }
@@ -66,7 +69,7 @@ final static function string StripTags(string input)
 
 // Engine.GameInfo
 // removes colors from a string
-final static function string StripColor(string s)
+final function string StripColor(string s)
 {
     local int p;
 
@@ -82,7 +85,7 @@ final static function string StripColor(string s)
 
 
 // remove both tags and colors
-final static function string NormalizeText(string input)
+final function string NormalizeText(string input)
 {
     input = StripTags(input);
     input = StripColor(input);

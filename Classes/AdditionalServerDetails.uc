@@ -1,3 +1,7 @@
+// Get additional server details and game states
+// Author        : NikC-
+// Home Repo     : https://github.com/InsultingPros/CustomServerDetails
+// License       : https://www.gnu.org/licenses/gpl-3.0.en.html
 class AdditionalServerDetails extends base_GR;
 
 
@@ -7,7 +11,8 @@ const KFPractiseGame1="KF-TheTestmap.KFPractiseGame";     // the test map v1
 const KFPractiseGame2="KF-TheTestmap-2.KFPractiseGame";   // the test map v2
 
 // pre defined state consts
-const UNDEFINED="UNDEFINED";
+const UD="UNDEFINED";
+const UDOBJ="UNKNOWNOBJ";
 const CHANGINGMAP="CHANGING_MAP";
 const WIN="WIN";
 const WIPE="WIPE";
@@ -54,7 +59,7 @@ function string getState()
         if (kfstory_obj != none)
             return CUROBJ;
         else
-            return UNDEFINED;
+            return UDOBJ;
     }
     // KFGameType zone!!!
     else if (kfgt != none)
@@ -66,7 +71,7 @@ function string getState()
     }
     // not specified zone!!!
     else
-        return UNDEFINED;
+        return UD;
 }
 
 

@@ -1,4 +1,7 @@
-// base gamerule class for our mod
+// Base gamerule class
+// Author        : NikC-
+// Home Repo     : https://github.com/InsultingPros/CustomServerDetails
+// License       : https://www.gnu.org/licenses/gpl-3.0.en.html
 class base_GR extends GameRules;
 
 
