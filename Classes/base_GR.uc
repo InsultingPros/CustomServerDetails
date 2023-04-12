@@ -4,7 +4,6 @@
 // License       : https://www.gnu.org/licenses/gpl-3.0.en.html
 class base_GR extends GameRules;
 
-
 var protected string GameTypeName; // cache gametype name for further use
 
 // pre defined gametype consts
@@ -15,72 +14,59 @@ var protected KFGameType kfgt;
 var protected KFStoryGameInfo kfstory;
 var protected KF_StoryGRI kfstory_GRI;
 
-
 // ==========================================================================
 //                           GAMERULE REGISTRATION
 // ==========================================================================
-
-event PostBeginPlay()
-{
-    if (Level.Game.GameRulesModifiers == none)
+event PostBeginPlay() {
+    if (Level.Game.GameRulesModifiers == none) {
         Level.Game.GameRulesModifiers = self;
-    else
+    } else {
         Level.Game.GameRulesModifiers.AddGameRules(self);
+    }
 }
 
-
-function AddGameRules(GameRules GR)
-{
-    if (GR != self)
+function AddGameRules(GameRules GR) {
+    if (GR != self) {
         super.AddGameRules(GR);
+    }
 }
-
 
 // ==========================================================================
 //                                  STARTUP
 // ==========================================================================
-
-event PreBeginPlay()
-{
+event PreBeginPlay() {
     super.PreBeginPlay();
 
     // set this at spawn time
     GameTypeName = getGTstr();
-
     // set gametype vars
     // vanilla kf
-    if (ClassIsChildOf(level.game.class, class'KFGameType'))
+    if (ClassIsChildOf(level.game.class, class'KFGameType')) {
         kfgt = KFGameType(level.game);
-    else
-        log(">>> WARNING!!! KFGameType was not found.", class.name);
+    } else {
+        warn("WARNING!!! KFGameType was not found.");
+    }
 
     // vanilla KFO
-    if (ClassIsChildOf(level.game.class, class'KFStoryGameInfo'))
-    {
+    if (ClassIsChildOf(level.game.class, class'KFStoryGameInfo')) {
         kfstory = KFStoryGameInfo(level.game);
         kfstory_GRI = KF_StoryGRI(kfstory.GameReplicationInfo);
     }
 }
 
-
-final function string getGTstr()
-{
+final function string getGTstr() {
     local GameReplicationInfo tempGri;
 
-    foreach allActors(class'GameReplicationInfo', tempGri)
-    {
+    foreach allActors(class'GameReplicationInfo', tempGri) {
         return tempGri.gameClass;
     }
 }
 
-
 // ==========================================================================
 //                                SHUT DOWN
 // ==========================================================================
-
 // keep everything clean and safe
-event Destroyed()
-{
+event Destroyed() {
     super.Destroyed();
 
     kfgt = none;
@@ -91,18 +77,15 @@ event Destroyed()
 // ==========================================================================
 //                                FUNCTIONS
 // ==========================================================================
-
 // class'GameInfo'.static.AddServerDetails(); copy-cat
-final static function addSD(out GameInfo.serverResponseLine serverState, string newkey, coerce string newvalue)
-{
+final static function addSD(
+    out GameInfo.serverResponseLine serverState,
+    string newkey,
+    coerce string newvalue
+) {
     class'GameInfo'.static.AddServerDetail(serverState, newkey, newvalue);
 }
-
 
 // ==========================================================================
 // func stubs
 function string getState();
-
-
-// ==========================================================================
-defaultproperties{}
