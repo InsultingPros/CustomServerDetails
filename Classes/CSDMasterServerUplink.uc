@@ -64,6 +64,7 @@ var config string playerAwaitingNicknamePattern;
 var config string playerAliveNicknamePattern;
 // change color keys (like ^2 or ^6) to real colors
 var config bool bColorNicknames;
+var config array<string> extendedServerDetailsClassName;
 
 var public GameInfo.serverResponseLine srl;
 var public AdditionalServerDetails AdditionalSD;
@@ -112,11 +113,26 @@ event Refresh() {}
 //                                STARTUP
 // ==========================================================================
 event postBeginPlay() {
-    // add to the game special custom GameRules
-    // so these GameRules will add extra details on the server description
+    local int i;
+    local class<base_GR> additionalGameRule;
+
+    // add custom GameRule for extra details on the server description
     if (AdditionalSD == none) {
         AdditionalSD = spawn(class'AdditionalServerDetails');
     }
+    // add to the game special custom GameRules
+    // so these GameRules will add extra details on the server description
+    for (i = 0; i < extendedServerDetailsClassName.length; i++)
+    {
+        additionalGameRule = class<base_GR>(dynamicLoadObject(extendedServerDetailsClassName[i], class'class'));
+
+        if (additionalGameRule == none) {
+            warn("Class '" $ extendedServerDetailsClassName[i] $ "' (extendedServerDetailsClassName) wasn't found.");
+            continue;
+        }
+        spawn(additionalGameRule);
+    }
+
     // cache everything at this step
     CacheManager.InitCaching(self);
     // start the timer with config delay
