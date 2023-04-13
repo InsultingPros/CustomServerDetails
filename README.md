@@ -4,24 +4,24 @@
 
 Allows to color, rename, edit other server infos, print game states (aka WIPE, WIN, LOBBY, etc) and players states (DEAD, SPECTATING, etc). And you can add your own haiku's / custom key-infos.
 
-> **N.B.** `Killingfloor.ini` -> [Engine.GameReplicationInfo] -> ServerName: set your NON colored server name here, to avoid weird characters in Steam server browser / gametrackers.
+If you want to add additional variables into server info, check [Custom Server Details Extension](https://github.com/InsultingPros/CustomServerDetailsExtension).
 
 ## Installation
 
-```cpp
-`KillingFloor.ini`
+> **Note** `Killingfloor.ini` -> [Engine.GameReplicationInfo] -> `ServerName`: set your NON colored server name here, to avoid weird characters in Steam server browser / gametrackers.
+
+```ini
+KillingFloor.ini
 [Engine.GameEngine]
-;ServerActors=IpDrv.MasterServerUplink
+; ServerActors=IpDrv.MasterServerUplink
 ServerActors=CustomServerDetails.CSDMasterServerUplink
 ```
 
-## Building and Dependancies
-
-At the moment of 2021.03.27 there are no dependencies.
+## Building
 
 Use [KF Compile Tool](https://github.com/InsultingPros/KFCompileTool) for easy compilation.
 
-```cpp
+```ini
 EditPackages=CustomServerDetails
 ```
 
