@@ -65,22 +65,23 @@ var config string playerAliveNicknamePattern;
 // change color keys (like ^2 or ^6) to real colors
 var config bool bColorNicknames;
 
-var private GameInfo.serverResponseLine srl;
-var private AdditionalServerDetails AdditionalSD;
-var private o_Utility _;
+var public GameInfo.serverResponseLine srl;
+var public AdditionalServerDetails AdditionalSD;
+var public o_Utility _;
+var public CacheManager CacheManager;
 
 // variables for caching
 // N.B. transient modificator does nothing here, I just
 // use it to visually differentiate 'special' variables
-var private transient string cachedServerName;
-var private transient bool   bChangeServerName;
-var private transient string cachedColoredMapName;
-var private transient array<GameInfo.KeyValuePair> cachedServerInfo;
-var private transient array<cacheinfoBlockPattern> cachedInfoBlockPatterns;
-var private transient string cachedPlayerDeadNicknamePattern;
-var private transient string cachedPlayerSpectatingNicknamePattern;
-var private transient string cachedPlayerAwaitingNicknamePattern;
-var private transient string cachedPlayerAliveNicknamePattern;
+var public transient string cachedServerName;
+var public transient bool bChangeServerName;
+var public transient string cachedColoredMapName;
+var public transient array<GameInfo.KeyValuePair> cachedServerInfo;
+var public transient array<cacheinfoBlockPattern> cachedInfoBlockPatterns;
+var public transient string cachedPlayerDeadNicknamePattern;
+var public transient string cachedPlayerSpectatingNicknamePattern;
+var public transient string cachedPlayerAwaitingNicknamePattern;
+var public transient string cachedPlayerAliveNicknamePattern;
 
 // for reference
 // GameInfo:
@@ -104,251 +105,78 @@ var private transient string cachedPlayerAliveNicknamePattern;
 //     var() array<PlayerResponseLine> PlayerInfo;
 // };
 
+// DISABLE original getter
+event Refresh() {}
+
 // ==========================================================================
 //                                STARTUP
 // ==========================================================================
-auto state CSDStartup {
-    const MATCH="%nickname%";
-    const WARNING="CustomServerDetails[WARNING]: You set 'bAnotherNicknamesStyle=true'. But you didn't paste %nickname% in '%var%'. JUST DO IT!";
-
-    // check if our settings are ok
-    // if not - fix automatically with a warning text
-    final private function CheckNicknameStyles() {
-        if (!bAnotherNicknamesStyle) {
-            return;
-        }
-
-        if (inStr(playerDeadNicknamePattern, MATCH) == -1) {
-            log(Repl(WARNING, "%var%", "playerDeadNicknamePattern"));
-            playerDeadNicknamePattern @= MATCH;
-        }
-        if (inStr(playerSpectatingNicknamePattern, MATCH) == -1) {
-            log(Repl(WARNING, "%var%", "playerSpectatingNicknamePattern"));
-            playerSpectatingNicknamePattern @= MATCH;
-        }
-        if (inStr(playerAwaitingNicknamePattern, MATCH) == -1) {
-            log(Repl(WARNING, "%var%", "playerAwaitingNicknamePattern"));
-            playerAwaitingNicknamePattern @= MATCH;
-        }
-        if (inStr(playerAliveNicknamePattern, MATCH) == -1) {
-            log(Repl(WARNING, "%var%", "playerAliveNicknamePattern"));
-            playerAliveNicknamePattern @= MATCH;
-        }
-    }
-
-    final private function PreCacheServerName() {
-        if (bCustomServerName) {
-            cachedServerName = _.ParseTags(ServerName);
-        } else {
-            cachedServerName = Level.GRI.ServerName;
-        }
-
-        if (bInfoBlockInServerName) {
-            // can't find %infoBlock% in the server's name, so past infoBlock at the end
-            if (inStr(cachedServerName, "%infoBlock%") == -1) {
-                log("CustomServerDetails[WARNING]: You set 'bInfoBlockInServerName=true'. But you didn't paste %infoBlock% in Server Name. JUST DO IT!");
-                cachedServerName @= "%infoBlock%";
-            }
-        } else {
-            // find the %infoBlock% and remove it
-            if (inStr(cachedServerName, "%infoBlock%") != -1) {
-                log("CustomServerDetails[WARNING]: You set 'bInfoBlockInServerName=false'. But you paste %infoBlock% in Server Name. REMOVE IT!");
-                cachedServerName -= "%infoBlock%";
-            }
-        }
-
-        // less boolean checks in main Timer()
-        if (bInfoBlockInServerName || bCustomServerName) {
-            bChangeServerName = true;
-        }
-    }
-
-    final private function PreCacheNickNamePatterns() {
-        cachedPlayerDeadNicknamePattern = _.ParseTags(playerDeadNicknamePattern);
-        cachedPlayerSpectatingNicknamePattern = _.ParseTags(playerSpectatingNicknamePattern);
-        cachedPlayerAwaitingNicknamePattern = _.ParseTags(playerAwaitingNicknamePattern);
-        cachedPlayerAliveNicknamePattern = _.ParseTags(playerAliveNicknamePattern);
-    }
-
-    // parse tags and create cached array of colored strings
-    // to avoid expensive function calls on every use
-    final private function PreColorInfoBlockPatterns() {
-        local int i;
-        local cacheinfoBlockPattern ibp;
-
-        for (i = 0; i < infoBlockPatterns.length; i++) {
-            ibp.state = infoBlockPatterns[i].state;
-            ibp.pattern = _.ParseTags(infoBlockPatterns[i].pattern);
-            cachedInfoBlockPatterns[cachedInfoBlockPatterns.Length] = ibp;
-        }
-    }
-
-    final private function FilterInfoBlockPatterns() {
-        local int i, n;
-
-        // filter InfoBlockPatterns that require key replacing
-        for (i = 0; i < cachedInfoBlockPatterns.length; i++) {
-            for (n = 0; n < infoBlockKeys.length; n++) {
-                if (inStr(cachedInfoBlockPatterns[i].pattern, "%"$infoBlockKeys[n].key$"%") != -1) {
-                    cachedInfoBlockPatterns[i].bPasteValue = true;
-                    // !!!
-                    break;
-                }
-            }
-        }
-    }
-
-    // color / change server details in bottom left
-    // #1 slowest function in our entire mod, update it once per 60 sec
-    final private function filterServerDetails() {
-        local int i, j;
-        // local float f;
-
-        // Clock(f);
-        // delete all details that are not in allowed list
-        // change detail names if necessary, add color
-        for (i = srl.serverInfo.length - 1; i >= 0; i--) {
-            for (j = 0; j < displayedServerDetails.length; j++) {
-                if (srl.serverInfo[i].key ~= displayedServerDetails[j].name && !displayedServerDetails[j].bCustom)
-                {
-                    if (displayedServerDetails[j].bChangeName) {
-                        srl.serverInfo[i].key = displayedServerDetails[j].newName;
-                    }
-
-                    srl.serverInfo[i].key = _.ParseTags(displayedServerDetails[j].keyTag) $ srl.serverInfo[i].key;
-                    srl.serverInfo[i].value = _.ParseTags(displayedServerDetails[j].valTag) $ srl.serverInfo[i].value;
-                    break;
-                }
-
-                if (j == (displayedServerDetails.length - 1)) {
-                    srl.serverInfo.remove(i,1);
-                }
-            }
-        }
-        // UnClock(f);
-        // log("part one:"@f);
-        // f = 0.0;
-
-        // Clock(f);
-        // add custom details
-        for (i = 0; i < displayedServerDetails.length; i++) {
-            if (displayedServerDetails[i].bCustom) {
-                AdditionalSD.addSD(
-                    srl,
-                    _.ParseTags(displayedServerDetails[i].keyTag) $ displayedServerDetails[i].name,
-                    _.ParseTags(displayedServerDetails[i].valTag) $ displayedServerDetails[i].customValue
-                );
-            }
-        }
-
-        // UnClock(f);
-        // log("part two:"@f);
-    }
-
-    final private function CacheStuff() {
-        CheckNicknameStyles();
-        PreCacheServerName();
-        PreCacheNickNamePatterns();
-        PreColorInfoBlockPatterns();
-        FilterInfoBlockPatterns();
-
-        // ask server for all iformation it can give
-        level.game.getServerInfo(srl);
-        level.game.getServerDetails(srl);
-
-        // filter/add/change server details
-        if (bChangeServerDetails) {
-            filterServerDetails();
-        }
-        if (bChangeServerName) {
-            dynamicChangeServerName();
-        }
-        if (bMapColor) {
-            cachedColoredMapName = _.ParseTags(mapColor $ srl.mapName);
-            srl.mapName = cachedColoredMapName;
-        }
-
-        cachedServerInfo = srl.ServerInfo;
-        serverState = srl;
-    }
-
-begin:
+event postBeginPlay() {
     // add to the game special custom GameRules
     // so these GameRules will add extra details on the server description
     if (AdditionalSD == none) {
         AdditionalSD = spawn(class'AdditionalServerDetails');
     }
-
-    CacheStuff();
-
-    if (level.game.GetNumPlayers() == 0) {
-        gotoState('CSDWorkerEmpty', 'begin');
-    } else {
-        gotoState('CSDWorker', 'begin');
-    }
-    // for debug: ConsoleCommand("PROFILESCRIPT START")
+    // cache everything at this step
+    CacheManager.InitCaching(self);
+    // start the timer with config delay
+    setTimer(refreshTime, true);
+    // DEBUG!
+    // ConsoleCommand("PROFILESCRIPT START")
 }
 
 // ==========================================================================
 //                            TIMER and FUNCTIONS
 // ==========================================================================
-// DISABLE original getter / 60 sec timer
-event Refresh(){}
 
-state CSDWorker {
-    event timer() {
-        // local float g, f;
+event timer() {
+    // local float g, f, y;
 
-        // Clock(g);
-        if (level.game.GetNumPlayers() == 0) {
-            gotoState('CSDWorkerEmpty', 'begin');
-        }
+    // Clock(g);
+    // ask server for all information it can give
+    level.game.getServerInfo(srl);
+    CSDGetServerPlayers();
+    level.game.getServerDetails(srl);
+    // UnClock(g);
+    // warn("Part #1 done in - " $ g);
 
-        // Clock(g);
-
-        // ask server for all information it can give
-        level.game.getServerInfo(srl);
-        CSDGetServerPlayers();
-        level.game.getServerDetails(srl);
-
-        // UnClock(g);
-        // log("Part #1 done in - "@g);
-
-        // Clock(f);
-
-        // change server name to custom one / fill %infoblock%
-        if (bChangeServerName) {
-            dynamicChangeServerName();
-        }
-
-        if (bMapColor) {
-            srl.mapName = cachedColoredMapName;
-        }
-
-        // UnClock(f);
-        // log("Part #2 done in -- "@f);
-
-        // use precached server details
-        srl.ServerInfo = cachedServerInfo;
-        serverState = srl;
+    // Clock(f);
+    // change server name to custom one / fill %infoblock%
+    if (bChangeServerName) {
+        dynamicChangeServerName();
     }
+    if (bMapColor) {
+        srl.mapName = cachedColoredMapName;
+    }
+    // UnClock(f);
+    // warn("Part #2 done in - " $ f);
 
-begin:
-    // log(">> CSDMasterServerUplink started!");
-    // start the timer with config delay
-    setTimer(refreshTime, true);
+    // Clock(y);
+    // use precached server details
+    srl.ServerInfo = cachedServerInfo;
+    serverState = srl;
+    // UnClock(y);
+    // warn("Part #3 done in - " $ y);
+
+    if (level.game.NumPlayers == 0) {
+        gotoState('ServerEmpty', 'begin');
+    }
 }
 
-state CSDWorkerEmpty {
+state ServerEmpty {
     event timer() {
-        if (level.game.GetNumPlayers() != 0) {
-            gotoState('CSDWorker', 'begin');
+        if (level.game.NumPlayers == 0) {
+            return;
         }
+        // reset timer to normal rate
+        setTimer(refreshTime, true);
+        gotoState('');
     }
 
 begin:
-    // log(">> empty server state started!");
-    setTimer(1, true);
+    // warn("empty server state started!");
+    // scan active players with higher rate
+    setTimer(0.5, true);
 }
 
 // it's changed function of TWI 'GameInfo'.GetServerPlayers() with some extended capabilities
@@ -491,5 +319,9 @@ defaultproperties {
     // quick access objects
     Begin Object Class=o_Utility Name=o_Utility_Instance
     End Object
-    _ = o_Utility_Instance;
+    _=o_Utility_Instance;
+
+    Begin Object Class=CacheManager Name=CacheManager_Instance
+    End Object
+    CacheManager=CacheManager_Instance;
 }
