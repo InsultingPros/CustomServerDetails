@@ -1,0 +1,32 @@
+[h1][b]Features[/b][/h1]
+[list]
+[*] Fast execution unlike all other private mods [spoiler]that we plebs don't deserve to use[/spoiler].
+[*] Color server, map names, variable key-value pairs at your taste.
+[*] Show server (WIPE, WIN, LOBBY, etc) and player (DEAD, SPECTATING, etc) states.
+[*] Remove default variable key-value pairs or add custom ones (haiku's for example).
+[*] Add new variables (game difficulty, length, whatever your imagination allows) via separate [url=https://github.com/InsultingPros/CustomServerDetailsExtension]Custom Server Details Extension[/url].
+[/list]
+
+For all details check the default [url=https://github.com/InsultingPros/CustomServerDetails/blob/main/Configs/CustomServerDetails.ini]config file[/url].
+
+[h2][b]Whitelist Status[/b][/h2]
+[list]
+[*] Dedicated server: all clients will level up, get achievs.
+[*] Listened server: except the host itself, all clients will level up, get achievs.
+[*] Solo: uhm, server info for solo, uhm.
+[/list]
+
+[h2][b]How-to[/b][/h2]
+Inside [b]KillingFloor.ini[/b]:
+[code]
+[Engine.GameEngine]
+; ServerActors=IpDrv.MasterServerUplink
+ServerActors=CustomServerDetails.CSDMasterServerUplink
+
+[Engine.GameReplicationInfo]
+ServerName="put your NON colored server name here, to avoid weird characters in Steam server browser / gametrackers. Be better than average kf admins"
+[/code]
+Don't forget to comment out [b]MasterServerUplink[/b]!
+
+[h2][b]Download Link for Lazy Admins:[/b][/h2]
+[url=https://github.com/InsultingPros/CustomServerDetails/releases]GitHub[/url]
