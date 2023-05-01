@@ -31,7 +31,7 @@ Define your custom tags and add them in `infoblocks`. Just check the [CustomServ
 
 For default `serverinfo` keys:
 
-![img](Docs/Default_KF_Keys.png)
+![img](Docs/media/Default_KF_Keys.png)
 
 ## Steam workshop
 
