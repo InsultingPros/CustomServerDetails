@@ -8,7 +8,8 @@ If you want to add additional variables into server info, check [Custom Server D
 
 ## Installation
 
-> **Note** `Killingfloor.ini` -> [Engine.GameReplicationInfo] -> `ServerName`: set your NON colored server name here, to avoid weird characters in Steam server browser / gametrackers.
+> [!NOTE]
+> To avoid weird characters in Steam server browser and gametrackers - set your NON colored server name in `Killingfloor.ini` -> `[Engine.GameReplicationInfo]` -> `ServerName`.
 
 ```ini
 KillingFloor.ini
